@@ -1,51 +1,36 @@
-import 'package:blog2/model/auth/auth.dart';
-import 'package:blog2/repository/auth/auth_repository.dart';
 import 'package:rxdart/rxdart.dart';
-import 'package:blog2/bloc/auth/auth_validator.dart';
-import 'dart:async';
+import 'package:shared_preferences/shared_preferences.dart';
+class AuthorizationBloc {
+  String _tokenString = '';
 
-class AuthBloc {
-  final AuthRepository _repository = AuthRepository();
-  final BehaviorSubject<Auth> _subject = BehaviorSubject<Auth>();
+  final PublishSubject _isSessionValid = PublishSubject<bool>();
+  Stream<bool> get isSessionValid => _isSessionValid.stream;
 
-  final _emailController = BehaviorSubject<String>();
-  final _passwordController = BehaviorSubject<String>();
-
-  Function(String) get updateEmail => _emailController.sink.add;
-  Function(String) get updatePassword => _passwordController.sink.add;
-
-  Stream<String> get email => _emailController.stream.transform(Validator().validateEmail);
-  Stream<String> get password => _passwordController.stream.transform(Validator().validatePassword);
-
-  Stream<bool> get submitValid => CombineLatestStream.combine2(email, password, (email, password) {
-    return true;
-  });
-
-  login(String email, String password) async {
-    Auth response = await _repository.login(email, password);
-    _subject.sink.add(response);
+  void dispose() {
+    _isSessionValid.close();
   }
-
-  logout() async {
-    Auth response = await _repository.logout();
-    _subject.sink.add(response);
+  void restoreSession() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    _tokenString = prefs.get('token');
+    if (_tokenString != null && _tokenString.length > 0) {
+      print('session restore');
+      _isSessionValid.sink.add(true);
+    } else {
+      _isSessionValid.sink.add(false);
+    }
   }
-
-  submit() async {
-    final validEmail = _emailController.value;
-    final validPassword = _passwordController.value;
-    print('Logging in with email: $validEmail and password: $validPassword');
-    Auth response = await _repository.login(validEmail, validPassword);
-    _subject.sink.add(response);
+  void openSession() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    _tokenString = await prefs.getString('token');
+    print('session open');
+    _isSessionValid.sink.add(true);
   }
-
-  dispose() {
-    _subject.close();
-    _emailController.close();
-    _passwordController.close();
+  void closeSession() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.clear();
+    print('session close');
+    print(_tokenString);
+    _isSessionValid.sink.add(false);
   }
-
-  BehaviorSubject<Auth> get subject => _subject;
 }
-
-final bloc = AuthBloc();
+final authBloc = AuthorizationBloc();

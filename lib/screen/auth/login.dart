@@ -1,39 +1,52 @@
 import 'package:blog2/model/auth/auth.dart';
 import 'package:flutter/material.dart';
-import 'package:blog2/bloc/auth/auth_bloc.dart';
+import 'package:blog2/bloc/login/login_bloc.dart';
 import 'package:blog2/pref/auth/authPref.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:blog2/screen/home.dart';
 
 import 'package:flutter/material.dart';
-import 'package:blog2/bloc/auth/auth_bloc.dart';
-import 'package:blog2/bloc/auth/auth_provider.dart';
+import 'package:blog2/bloc/login/login_provider.dart';
 
 class LoginScreen extends StatelessWidget {
-  LoginScreen(AuthBloc bloc);
-
+  LoginBloc bloc = LoginBloc();
 
   @override
   Widget build(BuildContext context) {
-    final AuthBloc bloc = Provider.of(context);
-
-    return Provider(
-        child: Container(
-      margin: EdgeInsets.all(20.0),
-      child: Column(
-        children: <Widget>[
-          emailField(bloc),
-          passwordField(bloc),
-          submitButton(bloc),
-          userData(bloc)
-        ],
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Login'),
       ),
-    ),
+      body: Container(
+        margin: EdgeInsets.all(20.0),
+        child: Column(
+          children: <Widget>[
+                emailField(bloc),
+                passwordField(bloc),
+                submitButton(bloc),
+                userData(bloc)
+              ],
+        ),
+      ),
     );
+
+    // return Provider(
+    //     child: Container(
+    //   margin: EdgeInsets.all(20.0),
+    //   child: Column(
+    //     children: <Widget>[
+    //       emailField(bloc),
+    //       passwordField(bloc),
+    //       submitButton(bloc),
+    //       userData(bloc)
+    //     ],
+    //   ),
+    // ),
+    // );
   }
 
-  Widget emailField(AuthBloc bloc) {
+  Widget emailField(LoginBloc bloc) {
     return StreamBuilder(
       stream: bloc.email,
       builder: (context, snapshot) {
@@ -52,7 +65,7 @@ class LoginScreen extends StatelessWidget {
     );
   }
 
-  Widget passwordField(AuthBloc bloc) {
+  Widget passwordField(LoginBloc bloc) {
     return StreamBuilder(
       stream: bloc.password,
       builder: (context, snapshot) {
@@ -71,7 +84,7 @@ class LoginScreen extends StatelessWidget {
     );
   }
 
-  Widget submitButton(AuthBloc bloc) {
+  Widget submitButton(LoginBloc bloc) {
     return StreamBuilder<bool>(
       stream: bloc.submitValid,
       builder: (context, snapshot) {
@@ -80,7 +93,14 @@ class LoginScreen extends StatelessWidget {
           onPressed: () async {
             // SharedPreferences localStorage = await SharedPreferences.getInstance();
             if(snapshot.hasData){
+
               bloc.submit();
+              Navigator.pushReplacement(
+                context,
+                new MaterialPageRoute(
+                    builder: (context) => Home()
+                ),
+              );
               // if(localStorage.getString('token') != null ){
               //   Navigator.pushReplacement(
               //       context,
@@ -97,7 +117,7 @@ class LoginScreen extends StatelessWidget {
     );
   }
 
-  Widget userData(AuthBloc bloc) {
+  Widget userData(LoginBloc bloc) {
     return StreamBuilder<Auth>(
       stream: bloc.subject.stream,
       builder: (context, AsyncSnapshot<Auth> snapshot) {

@@ -1,4 +1,5 @@
 // import 'package:blog2/model/auth/auth_response.dart';
+import 'package:blog2/bloc/auth/auth_bloc.dart';
 import 'package:blog2/model/auth/auth.dart';
 import 'package:dio/dio.dart';
 import 'package:blog2/utils/logging_interceptor.dart';
@@ -22,12 +23,17 @@ class AuthProvider {
       final data = {"email": email, "password": password};
       Response response = await _dio.post(_api+_login,data: data);
       print("dari login => "+response.data['data']['email']);
-      authPref().set(
-          response.data['data']['id'],
-          response.data['data']['name'],
-          response.data['data']['email'],
-          response.data['data']['token']);
-      return Auth.fromJson(response.data);
+      if(response.statusCode == 200) {
+        authPref().set(
+            response.data['data']['id'],
+            response.data['data']['name'],
+            response.data['data']['email'],
+            response.data['data']['token']);
+        authBloc.openSession();
+        return Auth.fromJson(response.data);
+      } else {
+        return null;
+      }
     } catch (error, stacktrace) {
       print("Exception occured: $error stackTrace: $stacktrace");
     }
@@ -42,37 +48,5 @@ class AuthProvider {
     } catch (error, stacktrace) {
       print("Exception occured: $error stackTrace: $stacktrace");
     }
-  }
-
-  String _handleError(Error error) {
-    String errorDescription = "";
-    if (error is DioError) {
-      DioError dioError = error as DioError;
-      switch (dioError.type) {
-        case DioErrorType.CANCEL:
-          errorDescription = "Request to API server was cancelled";
-          break;
-        case DioErrorType.CONNECT_TIMEOUT:
-          errorDescription = "Connection timeout with API server";
-          break;
-        case DioErrorType.DEFAULT:
-          errorDescription =
-          "Connection to API server failed due to internet connection";
-          break;
-        case DioErrorType.RECEIVE_TIMEOUT:
-          errorDescription = "Receive timeout in connection with API server";
-          break;
-        case DioErrorType.RESPONSE:
-          errorDescription =
-          "Received invalid status code: ${dioError.response.statusCode}";
-          break;
-        case DioErrorType.SEND_TIMEOUT:
-          errorDescription = "Send timeout in connection with API server";
-          break;
-      }
-    } else {
-      errorDescription = "Unexpected error occured";
-    }
-    return errorDescription;
   }
 }
